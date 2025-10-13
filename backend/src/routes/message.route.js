@@ -6,4 +6,4 @@ router.get("send", (req, res, next) => {
   console.log("msg send endpoint");
 });
 
-export default msgRoutes;
+export default router;

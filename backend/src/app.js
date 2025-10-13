@@ -1,9 +1,11 @@
-import express from "express";
+import express, { json } from "express";
 import env from "dotenv";
+import cookieParser from "cookie-parser";
 
 // routes
 import authRoutes from "./routes/auth.route.js";
 import msgRoutes from "./routes/message.route.js";
+import { connectDB } from "./lib/db.js";
 
 env.config();
 
@@ -11,6 +13,13 @@ const app = express();
 
 const PORT = process.env.PORT || 3000;
 
+connectDB();
+
+// middlewares
+app.use(express.json({ limit: "5mb" })); // req.body
+app.use(cookieParser());
+
+// routes
 app.use("/api/auth", authRoutes);
 app.use("/api/message", msgRoutes);
 
