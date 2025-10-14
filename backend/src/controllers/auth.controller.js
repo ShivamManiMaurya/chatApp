@@ -88,3 +88,89 @@ export const signup = async (req, res, next) => {
     });
   }
 };
+
+// LOGIN ---------------------------------------
+export const login = async (req, res, next) => {
+  const { email, password } = req.body;
+
+  try {
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required fields: email and password are required",
+      });
+    }
+
+    if (typeof password !== "string") {
+      return res.status(409).json({
+        success: false,
+        error: "Password type must be string",
+      });
+    }
+
+    // valid email
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid email format.",
+      });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        error: "User not exist",
+      });
+    }
+
+    const isMatch = await bcript.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(409).json({
+        success: false,
+        error: "Password is incorrect.",
+      });
+    }
+
+    if (user) {
+      const token = generateToken(user._id, res);
+
+      return res.status(201).json({
+        success: true,
+        msg: "Login successfull.",
+        token,
+        user: {
+          id: user._id,
+          username: user.name,
+          email: user.email,
+          profilePic: user.profilePic,
+          createdAt: user.createdAt,
+        },
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid user data.",
+      });
+    }
+  } catch (error) {
+    console.error("Registration error: ", error);
+    return res.status(500).json({
+      success: false,
+      error: "Server error",
+    });
+  }
+};
+
+// LOGOUT ------------------------------
+export const logout = (req, res) => {
+  // Clear the cookie
+  res.cookie("token", "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 0, // Expire immediately
+  });
+
+  return res.status(200).json({ message: "Logged out successfully" });
+};
