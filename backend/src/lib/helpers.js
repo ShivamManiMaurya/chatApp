@@ -1,3 +1,3 @@
-export const lowerCaseEmail = (email) => {
-  return typeof email === "string" ? email.toLowerCase() : "";
+export const validLowerCase = (str) => {
+  return typeof str === "string" ? str.toLowerCase() : "";
 };

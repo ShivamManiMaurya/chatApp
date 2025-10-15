@@ -1,12 +1,14 @@
 import { emailRegex, passwordRegex, validatePassword } from "../helpers.js";
+import sendEmail from "../lib/email/mailer.js";
+import { welcomeEmailTemplate } from "../lib/email/template.js";
 import { generateToken } from "../lib/generateToken.js";
-import { lowerCaseEmail, lowerCaseEmail } from "../lib/helpers.js";
+import { validLowerCase } from "../lib/helpers.js";
 import User from "../models/auth.model.js";
 import bcript from "bcryptjs";
 
 export const signup = async (req, res, next) => {
   const { name, email, password } = req.body;
-  const lowerCaseEmail = lowerCaseEmail(email);
+  const lowerCaseEmail = validLowerCase(email);
 
   try {
     // check fields
@@ -25,8 +27,8 @@ export const signup = async (req, res, next) => {
         error: "Invalid email format.",
       });
     }
-    const user = User.findOne({ email: lowerCaseEmail });
-    if (!user) {
+    const user = await User.findOne({ email: lowerCaseEmail });
+    if (user) {
       return res.status(409).json({
         success: false,
         error: "Email already exist.",
@@ -63,6 +65,12 @@ export const signup = async (req, res, next) => {
       const savedUser = await newUser.save();
       const token = generateToken(savedUser._id, res);
 
+      const htmlContent = welcomeEmailTemplate(
+        savedUser.name,
+        "http://localhost:3000"
+      );
+      await sendEmail(savedUser.email, "Welcome to BaakBaak!", htmlContent);
+
       return res.status(201).json({
         success: true,
         msg: "Signup successfull.",
@@ -93,7 +101,7 @@ export const signup = async (req, res, next) => {
 // LOGIN ---------------------------------------
 export const login = async (req, res, next) => {
   const { email, password } = req.body;
-  const lowerCaseEmail = lowerCaseEmail(email);
+  const lowerCaseEmail = validLowerCase(email);
 
   try {
     if (!lowerCaseEmail || !password) {
