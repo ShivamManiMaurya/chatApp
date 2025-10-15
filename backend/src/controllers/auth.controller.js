@@ -1,14 +1,16 @@
 import { emailRegex, passwordRegex, validatePassword } from "../helpers.js";
 import { generateToken } from "../lib/generateToken.js";
+import { lowerCaseEmail, lowerCaseEmail } from "../lib/helpers.js";
 import User from "../models/auth.model.js";
 import bcript from "bcryptjs";
 
 export const signup = async (req, res, next) => {
   const { name, email, password } = req.body;
+  const lowerCaseEmail = lowerCaseEmail(email);
 
   try {
     // check fields
-    if (!name || !email || !password) {
+    if (!name || !lowerCaseEmail || !password) {
       return res.status(400).json({
         success: false,
         error:
@@ -17,13 +19,13 @@ export const signup = async (req, res, next) => {
     }
 
     // valid email
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(lowerCaseEmail)) {
       return res.status(400).json({
         success: false,
         error: "Invalid email format.",
       });
     }
-    const user = User.findOne({ email });
+    const user = User.findOne({ email: lowerCaseEmail });
     if (!user) {
       return res.status(409).json({
         success: false,
@@ -53,25 +55,24 @@ export const signup = async (req, res, next) => {
     const hashedPassword = await bcript.hash(password, salt);
 
     const newUser = new User({
-      email,
+      email: lowerCaseEmail,
       name,
       password: hashedPassword,
     });
     if (newUser) {
-      const token = generateToken(newUser._id, res);
-
-      await newUser.save();
+      const savedUser = await newUser.save();
+      const token = generateToken(savedUser._id, res);
 
       return res.status(201).json({
         success: true,
         msg: "Signup successfull.",
         token,
         user: {
-          id: newUser._id,
-          username: newUser.name,
-          email: newUser.email,
-          profilePic: newUser.profilePic,
-          createdAt: newUser.createdAt,
+          id: savedUser._id,
+          username: savedUser.name,
+          email: savedUser.email,
+          profilePic: savedUser.profilePic,
+          createdAt: savedUser.createdAt,
         },
       });
     } else {
@@ -92,9 +93,10 @@ export const signup = async (req, res, next) => {
 // LOGIN ---------------------------------------
 export const login = async (req, res, next) => {
   const { email, password } = req.body;
+  const lowerCaseEmail = lowerCaseEmail(email);
 
   try {
-    if (!email || !password) {
+    if (!lowerCaseEmail || !password) {
       return res.status(400).json({
         success: false,
         error: "Missing required fields: email and password are required",
@@ -109,14 +111,14 @@ export const login = async (req, res, next) => {
     }
 
     // valid email
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(lowerCaseEmail)) {
       return res.status(400).json({
         success: false,
         error: "Invalid email format.",
       });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: lowerCaseEmail });
     if (!user) {
       return res.status(400).json({
         success: false,

@@ -13,8 +13,6 @@ const app = express();
 
 const PORT = process.env.PORT || 3000;
 
-connectDB();
-
 // middlewares
 app.use(express.json({ limit: "5mb" })); // req.body
 app.use(cookieParser());
@@ -23,6 +21,13 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/message", msgRoutes);
 
-app.listen(PORT, () => {
-  console.log("server started at port - ", PORT);
-});
+connectDB()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log("server started at port - ", PORT);
+    });
+  })
+  .catch((error) => {
+    console.error("Failed to connect to MongoDB: ", error);
+    process.exit(1);
+  });
