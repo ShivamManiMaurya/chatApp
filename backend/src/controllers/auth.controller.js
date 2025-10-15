@@ -69,7 +69,13 @@ export const signup = async (req, res, next) => {
         savedUser.name,
         "http://localhost:3000"
       );
-      await sendEmail(savedUser.email, "Welcome to BaakBaak!", htmlContent);
+
+      // fire and forgot no await for email that will delay the main process
+      sendEmail(savedUser.email, "Welcome to BaakBaak!", htmlContent).catch(
+        (error) => {
+          console.error("Failed to send welcome email: ", error);
+        }
+      );
 
       return res.status(201).json({
         success: true,
