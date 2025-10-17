@@ -20,7 +20,6 @@ export const protectedRoute = (req, res, next) => {
     const decode = jwt.verify(token, process.env.JWT_SECRET);
 
     // Attach user info to request object
-    req.user = decode;
     req.userId = decode.id || decode.userId;
 
     next();

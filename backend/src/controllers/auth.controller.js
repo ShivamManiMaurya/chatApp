@@ -1,4 +1,5 @@
 import { emailRegex, passwordRegex, validatePassword } from "../helpers.js";
+import cloudinary from "../lib/cloudinary.js";
 import sendEmail from "../lib/email/mailer.js";
 import { welcomeEmailTemplate } from "../lib/email/template.js";
 import { generateToken } from "../lib/generateToken.js";
@@ -163,6 +164,7 @@ export const login = async (req, res, next) => {
           email: user.email,
           profilePic: user.profilePic,
           createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
         },
       });
     } else {
@@ -191,4 +193,43 @@ export const logout = (req, res) => {
   });
 
   return res.status(200).json({ message: "Logged out successfully" });
+};
+
+// PROFILE PIC UPLOAD -----------------
+export const uploadProfilePic = async (req, res) => {
+  try {
+    const { profilePic } = req.body;
+    if (!profilePic)
+      return res
+        .status(400)
+        .json({ success: false, message: "Profile pic is required" });
+
+    const userId = req.userId;
+    const uploadResponse = await cloudinary.uploader.upload(profilePic);
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { profilePic: uploadResponse.secure_url },
+      { new: true }
+    ).select("-password");
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile picture uploaded successfully.",
+      user: {
+        id: updatedUser._id,
+        username: updatedUser.name,
+        email: updatedUser.email,
+        profilePic: updatedUser.profilePic,
+        createdAt: updatedUser.createdAt,
+        updatedAt: updatedUser.updatedAt,
+      },
+    });
+  } catch (error) {
+    console.error("Error in profile picture upload: ", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
 };
