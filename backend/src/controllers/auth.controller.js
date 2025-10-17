@@ -15,7 +15,7 @@ export const signup = async (req, res, next) => {
     if (!name || !lowerCaseEmail || !password) {
       return res.status(400).json({
         success: false,
-        error:
+        message:
           "Missing required fields: name, email, and password are required",
       });
     }
@@ -24,14 +24,14 @@ export const signup = async (req, res, next) => {
     if (!emailRegex.test(lowerCaseEmail)) {
       return res.status(400).json({
         success: false,
-        error: "Invalid email format.",
+        message: "Invalid email format.",
       });
     }
     const user = await User.findOne({ email: lowerCaseEmail });
     if (user) {
       return res.status(409).json({
         success: false,
-        error: "Email already exist.",
+        message: "Email already exist.",
       });
     }
 
@@ -40,7 +40,7 @@ export const signup = async (req, res, next) => {
     if (!passwordCheck.isValid) {
       return res.status(400).json({
         success: false,
-        error: passwordCheck.errors,
+        message: passwordCheck.errors,
       });
     }
 
@@ -48,7 +48,7 @@ export const signup = async (req, res, next) => {
     if (name.length < 3) {
       return res.status(400).json({
         success: false,
-        error: "Name must be atleast 3 characters long.",
+        message: "Name must be atleast 3 characters long.",
       });
     }
 
@@ -79,7 +79,7 @@ export const signup = async (req, res, next) => {
 
       return res.status(201).json({
         success: true,
-        msg: "Signup successfull.",
+        message: "Signup successfull.",
         token,
         user: {
           id: savedUser._id,
@@ -92,14 +92,14 @@ export const signup = async (req, res, next) => {
     } else {
       return res.status(400).json({
         success: false,
-        error: "Invalid user data.",
+        message: "Invalid user data.",
       });
     }
   } catch (error) {
     console.error("Registration error: ", error);
     return res.status(500).json({
       success: false,
-      error: "Server error",
+      message: "Server error",
     });
   }
 };
@@ -113,14 +113,14 @@ export const login = async (req, res, next) => {
     if (!lowerCaseEmail || !password) {
       return res.status(400).json({
         success: false,
-        error: "Missing required fields: email and password are required",
+        message: "Missing required fields: email and password are required",
       });
     }
 
     if (typeof password !== "string") {
       return res.status(409).json({
         success: false,
-        error: "Password type must be string",
+        message: "Password type must be string",
       });
     }
 
@@ -128,7 +128,7 @@ export const login = async (req, res, next) => {
     if (!emailRegex.test(lowerCaseEmail)) {
       return res.status(400).json({
         success: false,
-        error: "Invalid email format.",
+        message: "Invalid email format.",
       });
     }
 
@@ -136,7 +136,7 @@ export const login = async (req, res, next) => {
     if (!user) {
       return res.status(400).json({
         success: false,
-        error: "User not exist",
+        message: "Invalid credentials",
       });
     }
 
@@ -144,7 +144,9 @@ export const login = async (req, res, next) => {
     if (!isMatch) {
       return res.status(409).json({
         success: false,
-        error: "Password is incorrect.",
+        message: "Invalid credentials",
+
+        // why "Invalid credentials coz - when we specify that password or email is not present then it may help the attackers"
       });
     }
 
@@ -153,7 +155,7 @@ export const login = async (req, res, next) => {
 
       return res.status(201).json({
         success: true,
-        msg: "Login successfull.",
+        message: "Login successfull.",
         token,
         user: {
           id: user._id,
@@ -166,14 +168,14 @@ export const login = async (req, res, next) => {
     } else {
       return res.status(400).json({
         success: false,
-        error: "Invalid user data.",
+        message: "Invalid user data.",
       });
     }
   } catch (error) {
     console.error("Registration error: ", error);
     return res.status(500).json({
       success: false,
-      error: "Server error",
+      message: "Server error",
     });
   }
 };
@@ -181,7 +183,7 @@ export const login = async (req, res, next) => {
 // LOGOUT ------------------------------
 export const logout = (req, res) => {
   // Clear the cookie
-  res.cookie("token", "", {
+  res.cookie("jwt", "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
