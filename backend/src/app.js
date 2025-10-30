@@ -7,10 +7,14 @@ import redis from "redis";
 import authRoutes from "./routes/auth.route.js";
 import msgRoutes from "./routes/message.route.js";
 import { connectDB } from "./lib/db.js";
-import createRateLimiter from "./middlewares/rateLimiter.slidingWindowCounter.js";
+import createRateLimiter from "./middlewares/apiRateLimiter.slidingWindowCounter.js";
 import rateLimitConfigSwc from "./lib/rate-limiters/sliding-window-counter/rateLimitConfig.swc.js";
-import createFixedWindowRateLimiter from "./middlewares/rateLImiter.fixedWindowCounter.js";
+import createFixedWindowRateLimiter from "./middlewares/authRateLImiter.fixedWindowCounter.js";
 import authRateLimiterConfig from "./lib/rate-limiters/fixed-window-counter/rateLimitConfig.fwc.js";
+import createChatRateLimiter from "./middlewares/chatRateLimiter.SlidingWindowLog.js";
+import chatRateLimiterConfig from "./lib/rate-limiters/sliding-window-log/rateLimitConfig.swl.js";
+import createUploadRateLimiter from "./middlewares/uploadRateLimiter.tokenBucket.js";
+import uploadRateLimiterConfig from "./lib/rate-limiters/token-bucket/rateLimitConfig.tb.js";
 
 env.config();
 
@@ -32,6 +36,18 @@ const authRateLimiter = createFixedWindowRateLimiter({
   windowMs: authRateLimiterConfig.signin.windowMs,
 });
 
+const chatRateLimiter = createChatRateLimiter({
+  redisClient,
+  limit: chatRateLimiterConfig.perUser.limit,
+  windowMs: chatRateLimiterConfig.perUser.windowMs,
+});
+
+const uploadRateLimiter = createUploadRateLimiter({
+  redisClient,
+  limit: uploadRateLimiterConfig.perUser.limit,
+  windowMs: uploadRateLimiterConfig.perUser.windowMs,
+});
+
 const PORT = process.env.PORT || 3000;
 
 // middlewares
@@ -39,6 +55,8 @@ app.use(express.json({ limit: "5mb" })); // req.body
 app.use(cookieParser());
 app.use("/api/auth", authRateLimiter);
 app.use("/api/message", apiRateLimiter);
+app.use("/api/chat", chatRateLimiter);
+app.use("/api/upload", uploadRateLimiter);
 
 // routes
 app.use("/api/auth", authRoutes);
